@@ -101,3 +101,4 @@ while running:
     clock.tick(fps)
     pygame.display.flip()
 pygame.quit()
+print('hello')
