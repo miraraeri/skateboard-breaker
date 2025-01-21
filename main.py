@@ -47,8 +47,8 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 100
         self.rect.y = 100
-        self.vx = 10
-        self.vy = 4
+        self.vx = 1
+        self.vy = 5
 
     def update(self):
         self.rect = self.rect.move(self.vx, self.vy)
@@ -83,6 +83,10 @@ class Player(pygame.sprite.Sprite):
         self.vx = 10
 
     def update(self, *args):
+        if self.rect.left == left.rect.x:
+            self.rect.x += 10
+        if self.rect.right == right.rect.x:
+            self.rect.x -= 10
         if args and args[0].key == pygame.K_LEFT:
             self.rect.x -= self.vx
         if args and args[0].key == pygame.K_RIGHT:
@@ -96,8 +100,8 @@ balls = pygame.sprite.Group()
 # tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
-Border(0, 0, 0, heigth)
-Border(width, 0, width, heigth)
+left = Border(0, 0, 0, heigth)
+right = Border(width, 0, width, heigth)
 Border(0, 0, width, 0)
 Border(0, heigth, width, heigth)
 Ball()
@@ -106,8 +110,6 @@ player = Player()
 clock = pygame.time.Clock()
 fps = 60
 running = True
-r = load_image('block.png')
-b = load_image('1.png')
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -120,8 +122,6 @@ while running:
     screen.fill((255, 255, 255))
     all_sprites.draw(screen)
     all_sprites.update()
-    # screen.blit(r, (0, 0))
-    # screen.blit(b, (400, 400))
     clock.tick(fps)
     pygame.display.flip()
 pygame.quit()
