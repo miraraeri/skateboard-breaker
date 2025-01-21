@@ -25,6 +25,19 @@ def load_image(name, colorkey=None):
     return image
 
 
+def load_level(filename):
+    filename = 'data' + filename
+    with open(filename, 'r') as mapFile:
+        level_map = [line.strip() for line in mapFile]
+
+    max_width = max(map(len, level_map))
+    return list(map(lambda x: x.ljust(max_width, "."), level_map))
+
+
+def generate_level():
+    pass
+
+
 class Ball(pygame.sprite.Sprite):
     image = load_image('ball_blue_small.png')
 
@@ -34,7 +47,7 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 400
         self.rect.y = 400
-        self.vx = 5
+        self.vx = 0
         self.vy = 5
 
     def update(self):
@@ -62,6 +75,8 @@ all_sprites = pygame.sprite.Group()
 vertical_boards = pygame.sprite.Group()
 horizontal_boards = pygame.sprite.Group()
 balls = pygame.sprite.Group()
+tiles_group = pygame.sprite.Group()
+player_group = pygame.sprite.Group()
 
 Border(0, 5, 0, heigth - 5)
 Border(width - 5, 5, width - 5, heigth - 5)
@@ -73,6 +88,7 @@ clock = pygame.time.Clock()
 fps = 60
 running = True
 r = load_image('block.png')
+b = load_image('1.png')
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -81,6 +97,7 @@ while running:
     all_sprites.draw(screen)
     all_sprites.update()
     screen.blit(r, (0, 0))
+    screen.blit(b, (400, 400))
     clock.tick(fps)
     pygame.display.flip()
 pygame.quit()
