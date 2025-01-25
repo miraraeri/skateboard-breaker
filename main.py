@@ -26,16 +26,12 @@ def load_image(name, colorkey=None):
 
 
 def load_level(filename):
-    filename = 'data' + filename
+    filename = 'data/' + filename
     with open(filename, 'r') as mapFile:
         level_map = [line.strip() for line in mapFile]
 
     max_width = max(map(len, level_map))
     return list(map(lambda x: x.ljust(max_width, "."), level_map))
-
-
-def generate_level():
-    pass
 
 
 class Ball(pygame.sprite.Sprite):
@@ -47,8 +43,8 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 100
         self.rect.y = 100
-        self.vx = 1
-        self.vy = 5
+        self.vx = 3
+        self.vy = 3
 
     def update(self):
         self.rect = self.rect.move(self.vx, self.vy)
@@ -57,7 +53,15 @@ class Ball(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, horizontal_boards):
             self.vy = -self.vy
         if pygame.sprite.spritecollideany(self, player_group):
-            self.vy = -self.vy
+            self.vx = -self.vx
+            if player.rect.top < self.rect.bottom < player.rect.bottom:
+                self.vy = -self.vy
+            if self.rect.right > player.rect.right:
+                self.vx = -self.vx
+        if pygame.sprite.spritecollide(self, tiles_group, True):
+            # if <= self.top <=
+            self.vx = -self.vx
+            # self.vy = -self.vy
 
 
 class Border(pygame.sprite.Sprite):
@@ -79,7 +83,7 @@ class Player(pygame.sprite.Sprite):
         self.image = load_image('1.png')
         self.rect = self.image.get_rect()
         self.rect.x = 400
-        self.rect.y = 600
+        self.rect.y = 595
         self.vx = 10
 
     def update(self, *args):
@@ -93,11 +97,30 @@ class Player(pygame.sprite.Sprite):
             self.rect.x += self.vx
 
 
+class Tile(pygame.sprite.Sprite):
+    image = load_image('block.png')
+
+    def __init__(self, x, y):
+        super().__init__(all_sprites, tiles_group)
+        self.image = Tile.image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+
+def generate_level(level):
+    for y in range(len(level)):
+        for x in range(len(level[y])):
+            tile = level[y][x]
+            if tile == '#':
+                Tile(x * 40, y * 40)
+
+
 all_sprites = pygame.sprite.Group()
 vertical_boards = pygame.sprite.Group()
 horizontal_boards = pygame.sprite.Group()
 balls = pygame.sprite.Group()
-# tiles_group = pygame.sprite.Group()
+tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
 left = Border(0, 0, 0, heigth)
@@ -107,6 +130,8 @@ Border(0, heigth, width, heigth)
 Ball()
 player = Player()
 
+generate_level(load_level('level_1.txt'))
+print(tiles_group.sprites())
 clock = pygame.time.Clock()
 fps = 60
 running = True
