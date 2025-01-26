@@ -19,6 +19,8 @@ TIMER_EVENT = 30
 MILLIS = 10 * 1000
 clock = pygame.time.Clock()
 FPS = 60
+lives = 3
+gameover = False
 
 
 def load_image(name, colorkey=None):
@@ -173,6 +175,35 @@ def start_screen():
         clock.tick(FPS)
 
 
+def game_over():
+    fon = load_image('over.jpg')
+    screen.blit(fon, (0, 0))
+    pygame.display.flip()
+
+
+def lose_life():
+    global lives, balls, gameover
+    lives -= 1
+    if lives <= 0:
+        gameover = True
+    else:
+        balls.empty()
+        Ball()
+
+
+def restart_game():
+    global all_sprites, player_group, tiles_group, balls, lives, gameover
+    all_sprites.empty()
+    player_group.empty()
+    balls.empty()
+    tiles_group.empty()
+    Ball()
+    Player()
+    lives = 3
+    generate_level(load_level('level_1.txt'))
+    gameover = False
+
+
 left = Border(0, 0, 0, heigth)
 right = Border(width, 0, width, heigth)
 Border(0, 0, width, 0)
@@ -182,7 +213,7 @@ pygame.time.set_timer(TIMER_EVENT, MILLIS)
 
 start_screen()
 generate_level(load_level('level_1.txt'))
-
+my_event = 0
 running = True
 while running:
     for event in pygame.event.get():
@@ -190,13 +221,23 @@ while running:
             running = False
         if event.type == TIMER_EVENT:
             Bonus()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            restart_game()
+    if len(tiles_group) == 0:
+        print("Вы победили")
+        pygame.quit()
+        sys.exit()
     if len(balls) == 0:
-        print("Вы проиграли")
-        generate_level(load_level('level_2.txt'))
-    screen.fill((255, 255, 255))
-    all_sprites.draw(screen)
-    all_sprites.update()
-    player.update()
+        lose_life()
+
+    if not gameover:
+        print(lives)
+        screen.fill((255, 255, 255))
+        all_sprites.draw(screen)
+        all_sprites.update()
+        player.update()
+    else:
+        game_over()
     clock.tick(FPS)
     pygame.display.flip()
 pygame.quit()
