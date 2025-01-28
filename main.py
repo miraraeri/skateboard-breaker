@@ -21,6 +21,8 @@ clock = pygame.time.Clock()
 FPS = 60
 lives = 3
 gameover = False
+win = False
+level_num = 1
 
 
 def load_image(name, colorkey=None):
@@ -69,7 +71,6 @@ class Ball(pygame.sprite.Sprite):
         if pygame.sprite.spritecollideany(self, horizontal_boards):
             self.vy = -self.vy
         if pygame.sprite.spritecollideany(self, player_group):
-            self.vx = -self.vx
             if player.rect.top < self.rect.bottom < player.rect.bottom:
                 self.vy = -self.vy
             if player.rect.right > self.rect.right > player.rect.left:
@@ -197,11 +198,33 @@ def restart_game():
     player_group.empty()
     balls.empty()
     tiles_group.empty()
+
     Ball()
     Player()
+
     lives = 3
-    generate_level(load_level('level_1.txt'))
+    generate_level(load_level(f'level_{level_num}.txt'))
     gameover = False
+
+
+def next_level():
+    global level_num, win
+    level_num += 1
+    if level_num > 2:
+        win = True
+        return
+    restart_game()
+
+
+def win_screen():
+    global level_num, win
+    fon = load_image("start.jpg")
+    screen.blit(fon, (0, 0))
+    pygame.display.flip()
+    if mouse[0]:
+        win = False
+        level_num = 1
+        restart_game()
 
 
 left = Border(0, 0, 0, heigth)
@@ -212,7 +235,7 @@ player = Player()
 pygame.time.set_timer(TIMER_EVENT, MILLIS)
 
 start_screen()
-generate_level(load_level('level_1.txt'))
+generate_level(load_level(f'level_{level_num}.txt'))
 my_event = 0
 running = True
 while running:
@@ -221,23 +244,22 @@ while running:
             running = False
         if event.type == TIMER_EVENT:
             Bonus()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            restart_game()
+    mouse = pygame.mouse.get_pressed()
+    if lives <= 0 and mouse[2]:
+        restart_game()
     if len(tiles_group) == 0:
-        print("Вы победили")
-        pygame.quit()
-        sys.exit()
+        next_level()
     if len(balls) == 0:
         lose_life()
 
-    if not gameover:
-        print(lives)
+    if not gameover and not win:
         screen.fill((255, 255, 255))
         all_sprites.draw(screen)
         all_sprites.update()
-        player.update()
-    else:
+    elif gameover:
         game_over()
+    elif win:
+        win_screen()
     clock.tick(FPS)
     pygame.display.flip()
 pygame.quit()
