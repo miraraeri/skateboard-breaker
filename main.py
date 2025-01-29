@@ -7,21 +7,34 @@ size = width, heigth = 800, 632
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Skateboard Breaker")
 
+fon_music = "Love in Mexico - Carmen María and Edu Espinal.mp3"
+pygame.mixer.music.load(f"data/{fon_music}")
+pygame.mixer.music.play(-1)
+bonus_sound = pygame.mixer.Sound('data/bonus_music.mp3')
+collide_music = pygame.mixer.Sound('data/collide_music.mp3')
+gameover_music = pygame.mixer.Sound('data/game_over_music.mp3')
+victory_music = pygame.mixer.Sound('data/victory_music.mp3')
+
 all_sprites = pygame.sprite.Group()
 vertical_boards = pygame.sprite.Group()
 horizontal_boards = pygame.sprite.Group()
 balls = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 bonus_group = pygame.sprite.Group()
+bonus_time_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
 TIMER_EVENT = 30
 MILLIS = 10 * 1000
+BONUS_TIME_EVENT = 20
+BONUS_DURATION = 5000
 clock = pygame.time.Clock()
 FPS = 60
 lives = 3
 gameover = False
+gmov_music = False
 win = False
+win_music = False
 level_num = 1
 
 
@@ -76,6 +89,7 @@ class Ball(pygame.sprite.Sprite):
             if player.rect.right > self.rect.right > player.rect.left:
                 self.vx = -self.vx
         if pygame.sprite.spritecollide(self, tiles_group, True):
+            collide_music.play()
             for block in tiles_group:
                 if block.rect.top < self.rect.top < block.rect.bottom \
                         or block.rect.top < self.rect.bottom < block.rect.bottom:
@@ -121,26 +135,59 @@ class Player(pygame.sprite.Sprite):
 
 class Bonus(pygame.sprite.Sprite):
     def __init__(self):
-        super().__init__(all_sprites, bonus_group)
+        super().__init__(all_sprites, bonus_group, bonus_time_group)
         self.bonus_img = ['лайтер.jpg', 'лайтер.jpg']
         self.image = load_image(self.bonus_img[0])
         self.rect = self.image.get_rect()
         self.rect.x = 400
         self.rect.y = 400
         self.v = 3
+        self.active = False
+        self.time_left = 0
 
     def update(self):
         self.rect = self.rect.move(0, self.v)
         if self.rect.top > heigth:
-            self.kill()
+            bonus_group.empty()
         if pygame.sprite.spritecollideany(self, player_group):
-            self.kill()
-            if self.bonus_img[0] == 'лайтер.jpg':
-                for i in range(2):
-                    Ball()
-            # if self.bonus_img[0] == 'лайтер.jpg':
-            # for ball in balls:
-            #     pygame.transform.scale(ball.image, (50, 50))
+            bonus_sound.play()
+            self.apply_bonus()
+            bonus_group.empty()
+
+    def apply_bonus(self):
+        # if self.bonus_img[0] == 'лайтер.jpg':
+        #     for i in range(2):
+        #         Ball()
+        # if self.bonus_img[0] == 'лайтер.jpg':
+        #     for ball in balls:
+        #         ball.image = pygame.transform.scale(ball.image, (50, 50))
+        #     self.active_bonus()
+        if self.bonus_img[0] == 'лайтер.jpg':
+            player.image = pygame.transform.scale(player.image, (100, 32))
+            self.active_bonus()
+
+    def active_bonus(self):
+        self.active = True
+        self.time_left = BONUS_DURATION
+        pygame.time.set_timer(BONUS_TIME_EVENT, 1000)
+
+    def deactivate(self):
+        self.active = False
+        pygame.time.set_timer(BONUS_TIME_EVENT, 0)
+        bonus_time_group.empty()
+
+
+def update_bonus_time():
+    for bonus in bonus_time_group:
+        if bonus.active:
+            bonus.time_left -= 1000
+            if bonus.time_left <= 0:
+                bonus.deactivate()
+                # if bonus.bonus_img[0] == 'лайтер.jpg':
+                #     for ball in balls:
+                #         ball.image = pygame.transform.scale(ball.image, (20, 20))
+                if bonus.bonus_img[0] == 'лайтер.jpg':
+                    player.image = pygame.transform.scale(player.image, (80, 32))
 
 
 class Tile(pygame.sprite.Sprite):
@@ -177,6 +224,11 @@ def start_screen():
 
 
 def game_over():
+    global gmov_music
+    if not gmov_music:
+        gameover_music.play()
+        gmov_music = True
+    pygame.mixer.music.pause()
     fon = load_image('over.jpg')
     screen.blit(fon, (0, 0))
     pygame.display.flip()
@@ -193,7 +245,7 @@ def lose_life():
 
 
 def restart_game():
-    global all_sprites, player_group, tiles_group, balls, lives, gameover
+    global all_sprites, player_group, tiles_group, balls, lives, gameover, gmov_music
     all_sprites.empty()
     player_group.empty()
     balls.empty()
@@ -205,6 +257,8 @@ def restart_game():
     lives = 3
     generate_level(load_level(f'level_{level_num}.txt'))
     gameover = False
+    gmov_music = False
+    pygame.mixer.music.unpause()
 
 
 def next_level():
@@ -217,12 +271,17 @@ def next_level():
 
 
 def win_screen():
-    global level_num, win
+    global level_num, win, win_music
     fon = load_image("start.jpg")
     screen.blit(fon, (0, 0))
     pygame.display.flip()
+    pygame.mixer.music.pause()
+    if not win_music:
+        victory_music.play()
+        win_music = True
     if mouse[0]:
         win = False
+        win_music = False
         level_num = 1
         restart_game()
 
@@ -244,6 +303,8 @@ while running:
             running = False
         if event.type == TIMER_EVENT:
             Bonus()
+        if event.type == BONUS_TIME_EVENT:
+            update_bonus_time()
     mouse = pygame.mouse.get_pressed()
     if lives <= 0 and mouse[2]:
         restart_game()
