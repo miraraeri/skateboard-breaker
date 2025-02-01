@@ -1,6 +1,7 @@
 import pygame
 import os
 import sys
+from random import randrange
 
 pygame.init()
 size = width, heigth = 800, 632
@@ -25,9 +26,8 @@ bonus_time_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
 TIMER_EVENT = 30
-MILLIS = 10 * 1000
-BONUS_TIME_EVENT = 20
-BONUS_DURATION = 5000
+MILLIS = 10000
+BONUS_DURATION = 500000
 clock = pygame.time.Clock()
 FPS = 60
 lives = 3
@@ -64,7 +64,7 @@ def load_level(filename):
 
 
 class Ball(pygame.sprite.Sprite):
-    image = load_image('ball_blue_small.png')
+    image = load_image('ball.png')
 
     def __init__(self):
         super().__init__(all_sprites, balls)
@@ -115,10 +115,10 @@ class Border(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, player_group)
-        self.image = load_image('1.png')
+        self.image = load_image('skate.png')
         self.rect = self.image.get_rect()
         self.rect.x = 400
-        self.rect.y = 595
+        self.rect.y = 590
         self.vx = 5
 
     def update(self, *args):
@@ -136,62 +136,67 @@ class Player(pygame.sprite.Sprite):
 class Bonus(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, bonus_group, bonus_time_group)
-        self.bonus_img = ['лайтер.jpg', 'лайтер.jpg']
-        self.image = load_image(self.bonus_img[0])
+        self.bonus_img = ['more balls.png', 'big ball.png', 'long sk.png']
+        self.type_image = self.bonus_img[randrange(0, len(self.bonus_img))]
+        self.image = load_image(self.type_image)
         self.rect = self.image.get_rect()
-        self.rect.x = 400
-        self.rect.y = 400
+        self.rect.x = randrange(0, 760)
+        self.rect.y = 100
         self.v = 3
         self.active = False
-        self.time_left = 0
+        self.time_left = BONUS_DURATION
+        self.type = ''
 
     def update(self):
         self.rect = self.rect.move(0, self.v)
         if self.rect.top > heigth:
-            bonus_group.empty()
+            self.kill()
         if pygame.sprite.spritecollideany(self, player_group):
             bonus_sound.play()
             self.apply_bonus()
-            bonus_group.empty()
+            self.remove(bonus_group, all_sprites)
+            self.active = True
 
     def apply_bonus(self):
-        # if self.bonus_img[0] == 'лайтер.jpg':
-        #     for i in range(2):
-        #         Ball()
-        # if self.bonus_img[0] == 'лайтер.jpg':
-        #     for ball in balls:
-        #         ball.image = pygame.transform.scale(ball.image, (50, 50))
-        #     self.active_bonus()
-        if self.bonus_img[0] == 'лайтер.jpg':
+        global lives
+        if self.type_image == self.bonus_img[0]:
+            self.type = 'count'
+            for i in range(2):
+                Ball()
+        if self.type_image == self.bonus_img[1]:
+            self.type = 'ball_size'
+            for ball in balls:
+                ball.image = pygame.transform.scale(ball.image, (50, 50))
+                ball.rect = ball.image.get_rect(topleft=ball.rect.topleft)
+            self.time_left = BONUS_DURATION
+        if self.type_image == self.bonus_img[2]:
+            self.type = 'skateboard_size'
             player.image = pygame.transform.scale(player.image, (100, 32))
-            self.active_bonus()
+            player.rect = player.image.get_rect(topleft=player.rect.topleft)
+            self.time_left = BONUS_DURATION
+        # if self.bonus_img[0]:
+        #     lives = lives + 1
+        #     print(lives)
 
-    def active_bonus(self):
-        self.active = True
-        self.time_left = BONUS_DURATION
-        pygame.time.set_timer(BONUS_TIME_EVENT, 1000)
+    def update_bonus(self):
+        if self.active:
+            self.time_left -= 1000
+            if self.time_left <= 0:
+                self.deactivate()
 
     def deactivate(self):
         self.active = False
-        pygame.time.set_timer(BONUS_TIME_EVENT, 0)
-        bonus_time_group.empty()
-
-
-def update_bonus_time():
-    for bonus in bonus_time_group:
-        if bonus.active:
-            bonus.time_left -= 1000
-            if bonus.time_left <= 0:
-                bonus.deactivate()
-                # if bonus.bonus_img[0] == 'лайтер.jpg':
-                #     for ball in balls:
-                #         ball.image = pygame.transform.scale(ball.image, (20, 20))
-                if bonus.bonus_img[0] == 'лайтер.jpg':
-                    player.image = pygame.transform.scale(player.image, (80, 32))
+        if self.type == 'ball_size':
+            for ball in balls:
+                ball.image = pygame.transform.scale(ball.image, (20, 20))
+                ball.rect = ball.image.get_rect(topleft=ball.rect.topleft)
+        if self.type == 'skateboard_size':
+            player.image = pygame.transform.scale(player.image, (80, 32))
+            player.rect = player.image.get_rect(topleft=player.rect.topleft)
 
 
 class Tile(pygame.sprite.Sprite):
-    image = load_image('block.png')
+    image = load_image('block.jpg')
 
     def __init__(self, x, y):
         super().__init__(all_sprites, tiles_group)
@@ -295,6 +300,7 @@ pygame.time.set_timer(TIMER_EVENT, MILLIS)
 
 start_screen()
 generate_level(load_level(f'level_{level_num}.txt'))
+game_fon = load_image('fon1.png')
 my_event = 0
 running = True
 while running:
@@ -303,8 +309,8 @@ while running:
             running = False
         if event.type == TIMER_EVENT:
             Bonus()
-        if event.type == BONUS_TIME_EVENT:
-            update_bonus_time()
+    for bonus in bonus_time_group:
+        bonus.update_bonus()
     mouse = pygame.mouse.get_pressed()
     if lives <= 0 and mouse[2]:
         restart_game()
@@ -315,6 +321,7 @@ while running:
 
     if not gameover and not win:
         screen.fill((255, 255, 255))
+        screen.blit(game_fon, (0, 0))
         all_sprites.draw(screen)
         all_sprites.update()
     elif gameover:
