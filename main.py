@@ -37,6 +37,9 @@ win = False
 win_music = False
 level_num = 1
 
+font = pygame.font.SysFont('arial', 36)
+text = font.render(f'Жизни: {lives}', True, (220, 20, 60))
+
 
 def load_image(name, colorkey=None):
     filename = os.path.join('data', name)
@@ -136,7 +139,7 @@ class Player(pygame.sprite.Sprite):
 class Bonus(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites, bonus_group, bonus_time_group)
-        self.bonus_img = ['more balls.png', 'big ball.png', 'long sk.png']
+        self.bonus_img = ['more balls.png', 'big ball.png', 'long sk.png', 'heart.png']
         self.type_image = self.bonus_img[randrange(0, len(self.bonus_img))]
         self.image = load_image(self.type_image)
         self.rect = self.image.get_rect()
@@ -158,7 +161,7 @@ class Bonus(pygame.sprite.Sprite):
             self.active = True
 
     def apply_bonus(self):
-        global lives
+        global lives, text
         if self.type_image == self.bonus_img[0]:
             self.type = 'count'
             for i in range(2):
@@ -174,9 +177,9 @@ class Bonus(pygame.sprite.Sprite):
             player.image = pygame.transform.scale(player.image, (100, 32))
             player.rect = player.image.get_rect(topleft=player.rect.topleft)
             self.time_left = BONUS_DURATION
-        # if self.bonus_img[0]:
-        #     lives = lives + 1
-        #     print(lives)
+        if self.type_image == self.bonus_img[3]:
+            lives += 1
+            text = font.render(f'Жизни: {lives}', True, (220, 20, 60))
 
     def update_bonus(self):
         if self.active:
@@ -240,8 +243,9 @@ def game_over():
 
 
 def lose_life():
-    global lives, balls, gameover
+    global lives, balls, gameover, text
     lives -= 1
+    text = font.render(f'Жизни: {lives}', True, (220, 20, 60))
     if lives <= 0:
         gameover = True
     else:
@@ -250,7 +254,7 @@ def lose_life():
 
 
 def restart_game():
-    global all_sprites, player_group, tiles_group, balls, lives, gameover, gmov_music
+    global all_sprites, player_group, tiles_group, balls, lives, gameover, gmov_music, text
     all_sprites.empty()
     player_group.empty()
     balls.empty()
@@ -261,6 +265,7 @@ def restart_game():
 
     lives = 3
     generate_level(load_level(f'level_{level_num}.txt'))
+    text = font.render(f'Жизни: {lives}', True, (220, 20, 60))
     gameover = False
     gmov_music = False
     pygame.mixer.music.unpause()
@@ -297,10 +302,10 @@ Border(0, 0, width, 0)
 Ball()
 player = Player()
 pygame.time.set_timer(TIMER_EVENT, MILLIS)
-
 start_screen()
 generate_level(load_level(f'level_{level_num}.txt'))
 game_fon = load_image('fon1.png')
+
 my_event = 0
 running = True
 while running:
@@ -323,6 +328,7 @@ while running:
         screen.fill((255, 255, 255))
         screen.blit(game_fon, (0, 0))
         all_sprites.draw(screen)
+        screen.blit(text, (5, 0))
         all_sprites.update()
     elif gameover:
         game_over()
