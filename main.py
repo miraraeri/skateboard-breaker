@@ -218,7 +218,7 @@ def generate_level(level):
 
 
 def start_screen():
-    fon = load_image('start.png')
+    fon = load_image('start.jpg')
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -237,7 +237,7 @@ def game_over():
         gameover_music.play()
         gmov_music = True
     pygame.mixer.music.pause()
-    fon = load_image('over.jpg')
+    fon = load_image('game over.jpg')
     screen.blit(fon, (0, 0))
     pygame.display.flip()
 
@@ -254,14 +254,14 @@ def lose_life():
 
 
 def restart_game():
-    global all_sprites, player_group, tiles_group, balls, lives, gameover, gmov_music, text
+    global all_sprites, player_group, tiles_group, balls, lives, gameover, gmov_music, text, player
     all_sprites.empty()
     player_group.empty()
     balls.empty()
     tiles_group.empty()
 
     Ball()
-    Player()
+    player = Player()
 
     lives = 3
     generate_level(load_level(f'level_{level_num}.txt'))
@@ -282,7 +282,7 @@ def next_level():
 
 def win_screen():
     global level_num, win, win_music
-    fon = load_image("start.jpg")
+    fon = load_image("win.jpg")
     screen.blit(fon, (0, 0))
     pygame.display.flip()
     pygame.mixer.music.pause()
